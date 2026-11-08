@@ -1,0 +1,12 @@
+node_modules
+dist
+
+# Secretos: nunca se suben. La plantilla .env.example sí.
+.env
+.env.local
+.env.*.local
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+*.log
