@@ -151,31 +151,32 @@ function StickyHeader(header, product, title) {
   );
 }
 
-/** Barra fija al pie de la ficha: cantidad, total en vivo y botones. Siempre visible al hacer scroll. */
+/**
+ * Barra fija al pie de la ficha: cantidad, total en vivo y botones. Siempre visible al hacer scroll.
+ * Celular: dos filas (total + cantidad arriba, botones abajo a todo lo ancho). Desde `sm`: una sola fila.
+ */
 function PurchaseBar(site, purchase) {
   const { business } = site;
   return div(
     { class: "sticky bottom-0 z-10 border-t border-foreground/10 bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8" },
     div(
-      { class: "flex items-center gap-3" },
+      { class: "flex flex-wrap items-center gap-x-3 gap-y-2.5" },
       div(
-        { class: "hidden min-w-0 sm:block" },
+        { class: "min-w-0 flex-1 sm:flex-none" },
         p({ class: "text-xs text-muted" }, "Total"),
-        p({ class: "text-xl font-semibold text-foreground tabular-nums" }, () => formatPrice(business, purchase.total())),
+        p({ class: "truncate text-lg font-semibold text-foreground tabular-nums sm:text-xl" }, () => formatPrice(business, purchase.total())),
       ),
+      QuantityStepper({ value: () => purchase.quantity.val, onChange: (value) => (purchase.quantity.val = value), min: 1, size: "lg" }),
       div(
-        { class: "flex flex-1 items-center justify-end gap-2 sm:gap-3" },
-        QuantityStepper({ value: () => purchase.quantity.val, onChange: (value) => (purchase.quantity.val = value), min: 1, size: "lg" }),
+        { class: "flex w-full items-center gap-2 sm:w-auto sm:flex-1 sm:justify-end sm:gap-3" },
         button(
-          { type: "button", onclick: purchase.orderNow, title: "Agregarlo y realizar el pedido", class: "btn-secondary h-11 shrink-0 px-3.5 text-sm" },
-          span("Pedir", span({ class: "hidden sm:inline" }, " ahora")),
+          { type: "button", onclick: purchase.orderNow, title: "Agregarlo y realizar el pedido", class: "btn-secondary h-11 flex-1 px-3.5 text-sm whitespace-nowrap sm:flex-none" },
+          "Pedir ahora",
         ),
         button(
-          { type: "button", onclick: purchase.add, class: "btn-primary h-11 min-w-0 flex-1 px-4 text-base sm:max-w-xs" },
-          Icon("cart", "size-5"),
+          { type: "button", onclick: purchase.add, class: "btn-primary h-11 min-w-0 flex-1 px-4 text-base whitespace-nowrap sm:max-w-xs" },
+          Icon("cart", "size-5 shrink-0"),
           span({ class: "truncate" }, "Agregar"),
-          // En celular el total va dentro del botón (no hay espacio para el bloque «Total»).
-          span({ class: "font-normal opacity-80 tabular-nums sm:hidden" }, () => `· ${formatPrice(business, purchase.total())}`),
         ),
       ),
     ),
@@ -238,7 +239,7 @@ export function ProductDialog({ productId, close, render }) {
     {
       "aria-label": "Detalle del producto",
       class:
-        "m-auto max-h-[94dvh] w-full max-w-5xl overflow-y-auto xl:max-w-6xl overscroll-contain bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-[2px] open:animate-fade-up max-sm:mb-0 max-sm:max-h-[92dvh] max-sm:rounded-t-2xl sm:w-[calc(100%-2rem)] sm:rounded-[min(var(--site-radius),0.75rem)]",
+        "m-auto max-h-[94dvh] w-full max-w-5xl overflow-x-hidden overflow-y-auto xl:max-w-6xl overscroll-contain bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-[2px] open:animate-fade-up max-sm:mb-0 max-sm:max-h-[92dvh] max-sm:rounded-t-2xl sm:w-[calc(100%-2rem)] sm:rounded-[min(var(--site-radius),0.75rem)]",
     },
     () => {
       const found = findProduct();

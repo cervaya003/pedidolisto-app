@@ -1,8 +1,14 @@
 import van from "vanjs-core";
 import Icon from "../../ui/Icon.js";
 import { adminStore } from "../adminStore.js";
+import { summarizeChanges } from "../changeSummary.js";
+import { openDiscardDialog, openPublishDialog } from "../components/PublishDialog.js";
 
 const { header, div, p, span, a, button } = van.tags;
+
+/** Cuántos cambios hay sin publicar (número en el botón «Publicar»). */
+const pendingCount = () =>
+  adminStore.isDirty.val ? summarizeChanges(adminStore.published.val, adminStore.draft.val).reduce((sum, group) => sum + group.changes.length, 0) : 0;
 
 const statusLabel = () => {
   if (adminStore.status.val === "loading") return "Cargando…";
@@ -42,12 +48,18 @@ export default function Toolbar({ mobileMode }) {
       ),
       a({ href: "/", target: "_blank", rel: "noopener", class: "btn-icon sm:size-9", title: "Ver sitio publicado", "aria-label": "Ver sitio publicado" }, Icon("external", "size-4")),
       button(
-        { type: "button", class: "btn-secondary hidden sm:inline-flex", disabled: () => !adminStore.isDirty.val || isBusy(), onclick: adminStore.discard },
+        { type: "button", class: "btn-secondary hidden sm:inline-flex", disabled: () => !adminStore.isDirty.val || isBusy(), onclick: openDiscardDialog },
         "Descartar",
       ),
       button(
-        { type: "button", class: "btn-primary", disabled: () => !adminStore.isDirty.val || isBusy(), onclick: adminStore.save },
+        { type: "button", class: "btn-primary", title: "Revisar cambios y publicar", disabled: () => !adminStore.isDirty.val || isBusy(), onclick: openPublishDialog },
         () => (adminStore.status.val === "saving" ? "Publicando…" : "Publicar"),
+        () => {
+          const count = pendingCount();
+          return count && adminStore.status.val !== "saving"
+            ? span({ class: "grid min-w-5 place-items-center rounded-full bg-white/20 px-1.5 text-[11px] leading-5 font-semibold tabular-nums" }, count)
+            : span();
+        },
       ),
       button({ type: "button", class: "btn-icon sm:size-9", title: "Cerrar sesión", "aria-label": "Cerrar sesión", onclick: adminStore.logout }, Icon("logout", "size-4")),
     ),

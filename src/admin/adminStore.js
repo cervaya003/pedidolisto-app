@@ -33,6 +33,8 @@ const notice = van.state(null);
 
 const isReady = van.derive(() => draft.val !== null);
 const isDirty = van.derive(() => draft.val !== null && JSON.stringify(draft.val) !== snapshot.val);
+/** Lo que está publicado ahora mismo (para comparar contra el borrador). */
+const published = van.derive(() => (snapshot.val ? JSON.parse(snapshot.val) : null));
 
 let noticeTimer;
 function notify(message, type = "info") {
@@ -73,6 +75,7 @@ export const adminStore = {
   notice,
   isReady,
   isDirty,
+  published,
   notify,
   logout,
 

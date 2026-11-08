@@ -42,3 +42,179 @@ body.is-resizing {
 body.is-resizing iframe {
   pointer-events: none;
 }
+
+/* ───────── Login ───────── */
+
+/* Entrada escalonada: cada elemento define su retraso con --delay. */
+.login-rise {
+  animation: login-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.login-card {
+  animation: login-card 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Aparece con un pequeño rebote (ojito, avisos y errores). */
+.login-pop {
+  animation: login-pop 0.25s ease-out both;
+}
+
+.login-shake {
+  animation: login-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Luces del fondo flotando lento. */
+.login-blob {
+  animation: login-float 18s ease-in-out infinite alternate;
+}
+
+.login-blob--2 {
+  animation-duration: 22s;
+  animation-delay: -6s;
+}
+
+.login-blob--3 {
+  animation-duration: 26s;
+  animation-delay: -12s;
+}
+
+/* Rejilla tenue que se desvanece hacia los bordes. */
+.login-grid {
+  background-image:
+    linear-gradient(to right, rgb(24 24 27 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(24 24 27 / 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+.login-gradient-text {
+  background: linear-gradient(90deg, #18181b, #71717a, #a1a1aa, #71717a, #18181b);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: login-gradient 8s linear infinite;
+}
+
+/* Destello que cruza el botón al pasar el mouse. */
+.login-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.25) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+
+.login-shine:hover:not(:disabled)::after {
+  transition: transform 0.8s ease;
+  transform: translateX(120%);
+}
+
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes login-card {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes login-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes login-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
+@keyframes login-float {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -40px) scale(1.1); }
+  100% { transform: translate(-40px, 50px) scale(0.95); }
+}
+
+@keyframes login-gradient {
+  to { background-position: 300% 0; }
+}
+
+/* Quien prefiere menos movimiento ve todo quieto. */
+@media (prefers-reduced-motion: reduce) {
+  .login-rise,
+  .login-card,
+  .login-pop,
+  .login-shake,
+  .login-blob,
+  .login-gradient-text {
+    animation: none;
+  }
+
+  .login-shine::after {
+    display: none;
+  }
+}
+
+/* ───────── Revisar y publicar ───────── */
+
+.publish-dialog[open] {
+  animation: publish-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.publish-item {
+  animation: publish-item 0.35s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes publish-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes publish-item {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publish-dialog[open],
+  .publish-item {
+    animation: none;
+  }
+}
