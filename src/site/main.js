@@ -5,14 +5,16 @@ import { metaStore } from "../core/metaStore.js";
 import { IS_PREVIEW, previewChannel } from "../core/previewChannel.js";
 import { siteStore } from "../core/siteStore.js";
 import { applyTheme } from "../core/theme.js";
+import { setFavicon } from "../core/favicon.js";
 
 van.derive(() => {
   const site = siteStore.site.val;
   if (!site) return;
 
   applyTheme(site.theme);
-  const { name, tagline } = site.business;
+  const { name, tagline, logoUrl } = site.business;
   document.title = tagline ? `${name} · ${tagline}` : name;
+  setFavicon(logoUrl);
 });
 
 van.add(document.getElementById("app"), App());

@@ -4,16 +4,12 @@
 import van from "vanjs-core";
 
 const SCROLLED_AFTER = 8; // px: a partir de aquí el encabezado toma fondo
-const HIDE_AFTER = 160; // px: antes de esto el encabezado nunca se esconde
-const DIRECTION_DELTA = 10; // px: movimiento mínimo para cambiar de dirección (evita parpadeos)
+const SPY_RESET_BEFORE = 160; // px: cerca del inicio ningún enlace del menú queda resaltado
 
 /** La página ya no está hasta arriba. */
 export const isScrolled = van.state(false);
-/** Bajando y lejos del inicio: los encabezados se pueden recoger. Subiendo vuelve a ser falso. */
-export const isScrollingDown = van.state(false);
 
 const root = document.documentElement;
-let anchorY = window.scrollY;
 let isQueued = false;
 
 function update() {
@@ -21,14 +17,6 @@ function update() {
   const y = Math.max(0, window.scrollY);
 
   isScrolled.val = y > SCROLLED_AFTER;
-
-  if (y <= HIDE_AFTER) {
-    isScrollingDown.val = false;
-    anchorY = y;
-  } else if (Math.abs(y - anchorY) >= DIRECTION_DELTA) {
-    isScrollingDown.val = y > anchorY;
-    anchorY = y;
-  }
 
   // Progreso de lectura 0–1 como variable CSS: las barras lo leen sin pasar por JS ni redibujar.
   const max = root.scrollHeight - window.innerHeight;
@@ -76,7 +64,7 @@ function observe(host, ids, active) {
       if (!host.isConnected) return observer.disconnect();
       for (const entry of entries) entry.isIntersecting ? visible.add(entry.target.id) : visible.delete(entry.target.id);
       // El primero visible en el orden del menú; si no hay ninguno (entre secciones), se queda el último.
-      active.val = ids.find((id) => visible.has(id)) ?? (window.scrollY < HIDE_AFTER ? "" : active.val);
+      active.val = ids.find((id) => visible.has(id)) ?? (window.scrollY < SPY_RESET_BEFORE ? "" : active.val);
     },
     { rootMargin: "-40% 0px -55% 0px" },
   );

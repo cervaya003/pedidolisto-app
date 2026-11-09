@@ -1,6 +1,6 @@
 // Encabezado de la plantilla Clásica.
 // Movimiento: entra deslizándose desde arriba; al bajar se vuelve de vidrio y más compacto,
-// se esconde mientras sigues bajando y reaparece en cuanto subes. Una línea de acento marca
+// y siempre queda visible. Una línea de acento marca
 // cuánto llevas de la página y el enlace de la sección visible queda subrayado.
 import van from "vanjs-core";
 import Icon from "../../ui/Icon.js";
@@ -9,7 +9,7 @@ import { getNavLinks, getVisibleProducts } from "../../core/siteSelectors.js";
 import { CartIconButton } from "../cart/CartControls.js";
 import { OrdersButton } from "../orders/MyOrders.js";
 import { startOrder } from "../cart/cartStore.js";
-import { isScrolled, isScrollingDown, scrollSpy } from "../motion/scroll.js";
+import { isScrolled, scrollSpy } from "../motion/scroll.js";
 
 const { header, nav, a, button, div, span } = van.tags;
 
@@ -23,8 +23,6 @@ export default function Navbar(site) {
   const links = [...getNavLinks(site), { href: "#contacto", label: "Contacto" }];
   const products = getVisibleProducts(site);
 
-  // Con el menú de celular abierto nunca se esconde. `:focus-visible` lo mantiene visible al navegar con teclado (no al hacer clic).
-  const isHidden = () => isScrollingDown.val && !isOpen.val;
   const isSolid = () => isScrolled.val || isOpen.val;
   const spy = scrollSpy(links.map((link) => link.href.slice(1)));
   const isActive = (link) => spy.active.val === link.href.slice(1);
@@ -32,9 +30,7 @@ export default function Navbar(site) {
   return spy.attach(header(
     {
       class: () =>
-        `fixed inset-x-0 top-0 z-40 animate-header-in transition-[translate,background-color,box-shadow,backdrop-filter] duration-500 ${EASE} has-[:focus-visible]:translate-y-0 ${
-          isHidden() ? "-translate-y-full" : "translate-y-0"
-        } ${isSolid() ? "bg-background/80 shadow-[0_1px_0_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.15)] backdrop-blur-xl" : "bg-transparent"}`,
+        `fixed inset-x-0 top-0 z-40 animate-header-in transition-[translate,background-color,box-shadow,backdrop-filter] duration-500 ${EASE} ${isSolid() ? "bg-background/80 shadow-[0_1px_0_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.15)] backdrop-blur-xl" : "bg-transparent"}`,
     },
     nav(
       {

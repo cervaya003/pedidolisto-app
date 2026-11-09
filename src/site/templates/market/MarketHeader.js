@@ -6,14 +6,15 @@ import { CartIconButton } from "../../cart/CartControls.js";
 import { OrdersButton } from "../../orders/MyOrders.js";
 import { activeCategory, ALL_CATEGORIES, query, resetFilters, scrollToResults } from "./marketStore.js";
 import { RADIUS_SM } from "./ui.js";
-import { isScrolled, isScrollingDown, onMount } from "../../motion/scroll.js";
+import { isScrolled } from "../../motion/scroll.js";
 
 const { header, div, a, img, form, label, input, button, nav, span } = van.tags;
 
 const MarketBrand = (business) =>
   a(
-    { href: "#", onclick: resetFilters, class: "shrink-0 font-heading text-xl font-bold tracking-tight text-on-primary sm:text-2xl" },
-    business.logoUrl ? img({ src: business.logoUrl, alt: business.name, class: "h-9 w-auto object-contain" }) : business.name,
+    { href: "#", onclick: resetFilters, class: "inline-flex shrink-0 items-center gap-2.5 font-heading text-xl font-bold tracking-tight text-on-primary sm:text-2xl" },
+    business.logoUrl ? img({ src: business.logoUrl, alt: "", class: "h-9 w-auto object-contain" }) : null,
+    span(business.name),
   );
 
 function SearchBox(business) {
@@ -105,9 +106,9 @@ export default function MarketHeader(site, products) {
   const element = header(
     {
       class: () =>
-        `sticky top-0 z-40 animate-header-in bg-primary text-on-primary transition-[translate,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] has-[:focus-visible]:translate-y-0 ${
+        `sticky top-0 z-40 animate-header-in bg-primary text-on-primary transition-shadow duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isScrolled.val ? "shadow-[0_10px_30px_-12px_rgb(0_0_0/0.45)]" : "shadow-md"
-        } ${!isScrollingDown.val ? "translate-y-0" : hasCategoryRow ? "-translate-y-(--market-top-row)" : "-translate-y-full"}`,
+        }`,
     },
     topRow,
     hasCategoryRow
@@ -126,16 +127,5 @@ export default function MarketHeader(site, products) {
       : null,
   );
 
-  // Alto real de la fila del buscador (cambia en celular, donde el buscador baja a otra línea).
-  // Se empieza a medir ya montado; se desconecta cuando el encabezado sale de la página.
-  if ("ResizeObserver" in window) {
-    onMount(element, () => {
-      const observer = new ResizeObserver(() => {
-        if (!element.isConnected) return observer.disconnect();
-        element.style.setProperty("--market-top-row", `${topRow.offsetHeight}px`);
-      });
-      observer.observe(topRow);
-    });
-  }
   return element;
 }

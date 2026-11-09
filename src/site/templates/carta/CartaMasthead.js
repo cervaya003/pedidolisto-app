@@ -21,8 +21,9 @@ function TopBar(business) {
     div(
       { class: "mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8" },
       a(
-        { href: "#", class: "min-w-0 truncate font-heading text-xl font-medium tracking-tight text-foreground" },
-        business.logoUrl ? img({ src: business.logoUrl, alt: business.name, class: "h-9 w-auto object-contain" }) : business.name,
+        { href: "#", class: "flex min-w-0 items-center gap-2.5 font-heading text-xl font-medium tracking-tight text-foreground" },
+        business.logoUrl ? img({ src: business.logoUrl, alt: "", class: "h-9 w-auto shrink-0 object-contain" }) : null,
+        span({ class: "truncate" }, business.name),
       ),
       info.length
         ? p(

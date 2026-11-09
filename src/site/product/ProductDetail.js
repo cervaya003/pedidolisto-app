@@ -14,7 +14,7 @@ import { addToCart, openCart, openCheckout } from "../cart/cartStore.js";
 import { QuantityStepper } from "../cart/CartControls.js";
 import { syncDialog } from "../templates/dialog.js";
 import ProductOptions from "./ProductOptions.js";
-import { createSelection, isCustomizable, missingOptions, selectionChoices, unitPrice } from "./optionRules.js";
+import { createSelection, describeChoices, isCustomizable, missingOptions, selectionChoices, unitPrice } from "./optionRules.js";
 
 const { dialog, div, span, h2, h3, p, ul, li, button } = van.tags;
 
@@ -28,18 +28,23 @@ const VARIANTS = {
 };
 
 /** Estado y acciones de compra de una ficha: selección, cantidad, precio, validación. */
-function createPurchase(product, { onAdded }) {
+function createPurchase(product, { onAdded, onInvalid }) {
   const selection = createSelection(product);
   const quantity = van.state(1);
   const unit = () => unitPrice(product, selectionChoices(product, selection));
   const configuration = () => ({ choices: selectionChoices(product, selection), note: selection.note.val });
 
-  // Si falta algo obligatorio, se marca y se lleva al cliente a la primera opción pendiente.
+  // Si falta algo obligatorio, se marca, se despliega la personalización y se lleva al cliente a la opción pendiente.
   function validate() {
     const [first] = missingOptions(product, selection);
     if (!first) return true;
     selection.showErrors.val = true;
-    document.querySelector(`[data-option="${CSS.escape(first.name)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const wasClosed = onInvalid?.() ?? false;
+    // Si el acordeón estaba cerrado, se espera a que termine de abrirse para desplazar.
+    setTimeout(
+      () => document.querySelector(`[data-option="${CSS.escape(first.name)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      wasClosed ? ACCORDION_MS : 0,
+    );
     return false;
   }
 
@@ -62,6 +67,58 @@ function createPurchase(product, { onAdded }) {
       openCheckout();
     },
   };
+}
+
+const ACCORDION_MS = 300;
+
+/**
+ * Personalización plegable. Cerrada muestra un resumen de lo elegido (o «Obligatorio» si falta algo);
+ * se abre sola cuando el cliente intenta agregar sin completar lo obligatorio.
+ */
+function Customization(product, purchase, business, open) {
+  const missing = () => missingOptions(product, purchase.selection);
+  const summary = () => {
+    const chosen = describeChoices(selectionChoices(product, purchase.selection)).map((item) => item.value);
+    if (purchase.selection.note.val.trim()) chosen.push("con indicaciones");
+    return chosen.join(" · ");
+  };
+  const panelId = `customize-${product.id}`;
+
+  return div(
+    { class: "border-t border-foreground/10 pt-2" },
+    button(
+      {
+        type: "button",
+        class: "group flex w-full items-center gap-3 py-3 text-left",
+        "aria-expanded": () => String(open.val),
+        "aria-controls": panelId,
+        onclick: () => (open.val = !open.val),
+      },
+      div(
+        { class: "min-w-0 flex-1" },
+        SectionTitle("Personaliza tu pedido"),
+        p(
+          { class: () => `mt-1 truncate text-sm ${missing().length && purchase.selection.showErrors.val ? "text-red-600" : "text-foreground/70"}` },
+          () => {
+            if (missing().length) return purchase.selection.showErrors.val ? `Falta elegir: ${missing().map((option) => option.name).join(", ")}` : "Obligatorio · elige tus opciones";
+            return summary() || "Opcional · toca para elegir";
+          },
+        ),
+      ),
+      span(
+        { class: () => `grid size-8 shrink-0 place-items-center rounded-full bg-surface text-foreground transition-transform duration-300 group-hover:bg-foreground/10 ${open.val ? "rotate-180" : ""}` },
+        Icon("chevronDown", "size-4"),
+      ),
+    ),
+    div(
+      {
+        id: panelId,
+        class: () => `grid transition-[grid-template-rows,opacity] duration-300 ease-out ${open.val ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`,
+        inert: () => !open.val,
+      },
+      div({ class: "min-h-0 overflow-hidden" }, div({ class: "space-y-5 pt-2 pb-1" }, ProductOptions(product, purchase.selection, business))),
+    ),
+  );
 }
 
 const SectionTitle = (text) => h3({ class: "text-xs font-semibold tracking-[0.18em] text-muted uppercase" }, text);
@@ -187,7 +244,16 @@ function PurchaseBar(site, purchase) {
 /** `onSelectProduct(product)` activa «También te puede gustar» para abrir otro producto en la misma ficha. */
 export function ProductDetail(site, product, { header, footer, onAdded, onSelectProduct, variant = "classic" } = {}) {
   const style = VARIANTS[variant] ?? VARIANTS.classic;
-  const purchase = createPurchase(product, { onAdded });
+  const customizeOpen = van.state(false);
+  const purchase = createPurchase(product, {
+    onAdded,
+    // Devuelve si estaba cerrado, para esperar la animación antes de desplazar.
+    onInvalid: () => {
+      const wasClosed = !customizeOpen.val;
+      customizeOpen.val = true;
+      return wasClosed;
+    },
+  });
   const title = h2({ class: `font-heading text-2xl leading-tight font-medium text-balance text-foreground sm:text-3xl ${style.title}` }, product.name);
   const customizable = isCustomizable(product);
 
@@ -202,9 +268,7 @@ export function ProductDetail(site, product, { header, footer, onAdded, onSelect
         div(
           { class: "space-y-6 md:col-start-2 md:row-span-2 md:row-start-1" },
           Intro(site, product, purchase, style.title, title),
-          customizable
-            ? div({ class: "space-y-5 border-t border-foreground/10 pt-6" }, SectionTitle("Personaliza tu pedido"), ProductOptions(product, purchase.selection, site.business))
-            : null,
+          customizable ? Customization(product, purchase, site.business, customizeOpen) : null,
           div({ class: "border-t border-foreground/10 pt-5" }, Assurances(site.business)),
         ),
         div({ class: "md:col-start-1 md:row-start-2" }, Ingredients(product)),

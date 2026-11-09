@@ -3,7 +3,6 @@ import CategoryFilter, { ALL_CATEGORIES } from "../components/CategoryFilter.js"
 import ProductGrid from "../components/ProductGrid.js";
 import SectionHeading from "../components/SectionHeading.js";
 import { getFavoritesLabel, getVisibleProducts, isInCategory } from "../../core/siteSelectors.js";
-import { isScrollingDown } from "../motion/scroll.js";
 
 const { section, div, p } = van.tags;
 
@@ -23,11 +22,8 @@ export default function MenuSection({ section: config, site }) {
       props.showFilters && site.categories.length > 1
         ? div(
             {
-              // Pegada debajo del encabezado compacto (h-14); cuando el encabezado se esconde, sube al borde.
-              class: () =>
-                `sticky z-30 -mx-5 mt-10 mb-6 bg-background/90 px-5 py-3 backdrop-blur-md transition-[top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:-mx-8 sm:px-8 ${
-                  isScrollingDown.val ? "top-0" : "top-14"
-                }`,
+              // Pegada debajo del encabezado compacto (h-14), que siempre está visible.
+              class: "sticky top-14 z-30 -mx-5 mt-10 mb-6 bg-background/90 px-5 py-3 backdrop-blur-md sm:-mx-8 sm:px-8",
             },
             CategoryFilter({ categories: site.categories, products, activeCategory, favoritesLabel: getFavoritesLabel(site, products) }),
           )
