@@ -3,6 +3,7 @@ import { confirmDelete } from "../components/ConfirmDialog.js";
 import FavoriteChip from "../components/FavoriteChip.js";
 import ListActions from "../components/ListActions.js";
 import ProductCustomization from "../components/ProductCustomization.js";
+import ProductDeposit from "../components/ProductDeposit.js";
 import SchemaForm from "../components/SchemaForm.js";
 import { PanelHeader } from "../components/Panel.js";
 import Icon from "../../ui/Icon.js";
@@ -82,6 +83,7 @@ export default function ProductsPanel() {
       FavoriteChip(index),
       SchemaForm(getProductFields(adminStore.get("categories"), adminStore.get("theme.template")), `products.${index}`),
       ProductCustomization(index),
+      ProductDeposit(index),
       button({ type: "button", class: "btn-secondary mt-8 w-full text-red-600 hover:border-red-300 hover:text-red-700", onclick: () => remove(selectedId.rawVal) }, Icon("trash", "size-4"), "Eliminar producto"),
     );
 

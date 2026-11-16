@@ -39,6 +39,7 @@ export const apiClient = {
   get: (path, options) => request(path, options),
   post: (path, body, options) => request(path, { ...options, method: "POST", body }),
   put: (path, body, options) => request(path, { ...options, method: "PUT", body }),
+  patch: (path, body, options) => request(path, { ...options, method: "PATCH", body }),
   /** Envía un archivo (Blob) tal cual, con su tipo como Content-Type. */
   upload: (path, file, options) => request(path, { ...options, method: "POST", file }),
 };

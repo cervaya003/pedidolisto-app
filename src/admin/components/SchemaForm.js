@@ -115,7 +115,8 @@ const RENDERERS = {
     ),
 
   select: (field, path) => {
-    const current = String(adminStore.get(path));
+    // `fallback`: lo que guardará el API si el campo aún no existe (datos de una versión anterior).
+    const current = String(adminStore.get(path) ?? field.fallback);
     return Field(
       field,
       withIcon(

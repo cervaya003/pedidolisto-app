@@ -6,6 +6,7 @@ import { SECTION_COMPONENTS } from "./sections/index.js";
 import { TEMPLATE_PAGES, TemplateOverlays } from "./templates/index.js";
 import CartDrawer from "./cart/CartDrawer.js";
 import MyOrders from "./orders/MyOrders.js";
+import { PaymentBubble, PaymentDialog } from "./payment/PaymentWidget.js";
 import { MobileCartBar } from "./cart/CartControls.js";
 import { getEnabledSections, getVisibleProducts } from "../core/siteSelectors.js";
 import { siteStore } from "../core/siteStore.js";
@@ -63,5 +64,7 @@ export default function App() {
     TemplateOverlays(),
     CartDrawer(),
     MyOrders(),
+    PaymentBubble(),
+    PaymentDialog(),
   );
 }

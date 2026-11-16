@@ -3,6 +3,7 @@ import Icon from "../../ui/Icon.js";
 import { adminStore } from "../adminStore.js";
 import { summarizeChanges } from "../changeSummary.js";
 import { openDiscardDialog, openPublishDialog } from "../components/PublishDialog.js";
+import { adminView, pendingCount as pendingOrders } from "../ordersStore.js";
 
 const { header, div, p, span, a, button } = van.tags;
 
@@ -36,10 +37,30 @@ export default function Toolbar({ mobileMode }) {
     ),
     div(
       { class: "ml-auto flex items-center gap-1.5 sm:gap-2" },
+      // Pedidos: el número avisa cuántos esperan anticipo o confirmación.
       button(
         {
           type: "button",
-          class: "btn-secondary max-sm:px-2.5 lg:hidden",
+          "aria-pressed": () => String(adminView.val === "orders"),
+          "aria-label": () => (pendingOrders.val ? `Pedidos (${pendingOrders.val} por atender)` : "Pedidos"),
+          title: "Pedidos",
+          onclick: () => (adminView.val = adminView.val === "orders" ? "editor" : "orders"),
+          class: () => `relative max-sm:px-2.5 ${adminView.val === "orders" ? "btn-primary" : "btn-secondary"}`,
+        },
+        Icon("receipt", "size-4"),
+        span({ class: "hidden sm:inline" }, "Pedidos"),
+        () =>
+          pendingOrders.val
+            ? span(
+                { class: "absolute -top-1.5 -right-1.5 grid min-w-5 place-items-center rounded-full bg-amber-500 px-1 text-[11px] leading-5 font-semibold text-white tabular-nums ring-2 ring-white" },
+                pendingOrders.val > 99 ? "99+" : pendingOrders.val,
+              )
+            : span(),
+      ),
+      button(
+        {
+          type: "button",
+          class: () => `btn-secondary max-sm:px-2.5 lg:hidden ${adminView.val === "orders" ? "hidden" : ""}`,
           "aria-label": () => (mobileMode.val === "edit" ? "Vista previa" : "Editar"),
           onclick: () => (mobileMode.val = mobileMode.val === "edit" ? "preview" : "edit"),
         },

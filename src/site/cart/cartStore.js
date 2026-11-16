@@ -93,6 +93,25 @@ export function getCartLines(products) {
 export const getCartCount = (lines) => lines.reduce((sum, line) => sum + line.quantity, 0);
 export const getCartTotal = (lines) => lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
 
+const toCents = (value) => Math.round(value * 100) / 100;
+
+/**
+ * Anticipo del carrito, con la misma regla que el API (% del subtotal o monto fijo por pieza, tope el subtotal).
+ * Solo para mostrarlo: el monto que vale es el que calcula el servidor. Sin datos para transferir, no hay anticipo.
+ */
+export function getCartDeposit(lines, business) {
+  if (!business?.payment?.enabled) return 0;
+  return toCents(
+    lines.reduce((sum, { product, unitPrice: price, quantity }) => {
+      const subtotal = price * quantity;
+      const value = Number(product.depositValue) || 0;
+      if (product.depositType === "percent") return sum + (subtotal * Math.min(value, 100)) / 100;
+      if (product.depositType === "fixed") return sum + Math.min(value * quantity, subtotal);
+      return sum;
+    }, 0),
+  );
+}
+
 /** Detalle de una línea para mensajes: "Sabor: Vainilla", "Notas: …". */
 export function lineDetails(line) {
   const details = describeChoices(line.choices).map(({ group, value }) => `${group}: ${value}`);

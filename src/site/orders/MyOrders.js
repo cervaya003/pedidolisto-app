@@ -8,6 +8,9 @@ import { getVisibleProducts } from "../../core/siteSelectors.js";
 import { siteStore } from "../../core/siteStore.js";
 import { savedCustomer } from "../checkout/checkoutStore.js";
 import { formatLongDate } from "../checkout/DatePicker.js";
+import { DepositBanner, formatDue } from "../checkout/OrderSuccess.js";
+import { PaymentHowTo } from "../payment/PaymentWidget.js";
+import ProofUpload from "../checkout/ProofUpload.js";
 import { describeChoices } from "../product/optionRules.js";
 import { syncDialog } from "../templates/dialog.js";
 import { closeOrders, isOrdersOpen, loadOrders, openOrders, orders, ordersError, ordersStatus } from "./orderHistory.js";
@@ -17,6 +20,46 @@ const { dialog, div, header, h2, h3, p, button, ul, li, img, span, details, summ
 const RADIUS = "rounded-[min(var(--site-radius),0.75rem)]";
 const RADIUS_SM = "rounded-[min(var(--site-radius),0.5rem)]";
 const DELIVERY_ICONS = { home: "home", point: "pin", arrange: "chat" };
+
+// Cómo ve el cliente cada estado de su pedido.
+const STATUS = {
+  awaiting_deposit: { label: "Falta anticipo", icon: "clock", tone: "bg-amber-500/15 text-amber-700" },
+  new: { label: "Recibido", icon: "check", tone: "bg-accent/10 text-accent" },
+  confirmed: { label: "Confirmado", icon: "check", tone: "bg-emerald-500/15 text-emerald-700" },
+  delivered: { label: "Entregado", icon: "box", tone: "bg-foreground/10 text-foreground/70" },
+  cancelled: { label: "Cancelado", icon: "close", tone: "bg-red-500/10 text-red-700" },
+};
+
+const StatusBadge = (status) => {
+  const info = STATUS[status] ?? STATUS.new;
+  return span({ class: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${info.tone}` }, Icon(info.icon, "size-3"), info.label);
+};
+
+/** Anticipo dentro de la tarjeta del pedido: pendiente (con datos y comprobante) o ya recibido. */
+function DepositSection(order, business) {
+  if (!(order.deposit > 0)) return null;
+  if (order.depositPaidAt) {
+    return p(
+      { class: `mt-4 flex flex-wrap items-center justify-between gap-2 ${RADIUS_SM} bg-emerald-500/10 px-3.5 py-2.5 text-sm text-emerald-800` },
+      span({ class: "flex items-center gap-2 font-medium" }, Icon("check", "size-4"), `Anticipo de ${formatPrice(business, order.deposit)} recibido`),
+      span({ class: "text-xs" }, `Resta ${formatPrice(business, order.total - order.deposit)}`),
+    );
+  }
+  if (order.status !== "awaiting_deposit") return null;
+  const overdue = order.depositDueAt && new Date(order.depositDueAt).getTime() < Date.now();
+  return div(
+    { class: "mt-4" },
+    DepositBanner(business, order),
+    overdue
+      ? p(
+          { class: `mt-2 ${RADIUS_SM} bg-red-500/10 px-3 py-2 text-xs text-red-700` },
+          `El plazo terminó el ${formatDue(order.depositDueAt, business.locale)}. Si ya pagaste, envíanos tu comprobante o escríbenos`,
+        )
+      : null,
+    PaymentHowTo(business, { amount: order.deposit, folio: order.folio }),
+    ProofUpload({ publicId: order.publicId, count: order.proofCount ?? 0, label: "O súbelo aquí" }),
+  );
+}
 
 /** El perfil guardado en este navegador, si tiene correo (sin correo no hay «Mis pedidos»). */
 const profile = () => (savedCustomer.val?.email && savedCustomer.val?.phone ? savedCustomer.val : null);
@@ -75,7 +118,10 @@ function OrderCard(order, index, site, productsById) {
   return li(
     { class: "animate-fade-up", style: `animation-delay:${Math.min(index, 6) * 60}ms` },
     details(
-      { class: `group ${RADIUS} border border-foreground/10 bg-background transition-shadow duration-300 open:shadow-lg open:shadow-black/5`, open: index === 0 },
+      {
+        class: `group ${RADIUS} border bg-background transition-shadow duration-300 open:shadow-lg open:shadow-black/5 ${order.status === "awaiting_deposit" ? "border-amber-500/40" : "border-foreground/10"}`,
+        open: index === 0 || order.status === "awaiting_deposit",
+      },
       summary(
         { class: "flex cursor-pointer list-none items-center gap-3 p-4 sm:gap-4 sm:p-5 [&::-webkit-details-marker]:hidden" },
         // Foto del primer producto, con cuántos más lleva.
@@ -96,7 +142,7 @@ function OrderCard(order, index, site, productsById) {
           div(
             { class: "flex flex-wrap items-center gap-x-2.5 gap-y-1" },
             h3({ class: "font-heading text-lg leading-none font-medium text-foreground tabular-nums" }, `Folio ${order.folio}`),
-            span({ class: "inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent" }, Icon("check", "size-3"), "Recibido"),
+            StatusBadge(order.status),
           ),
           p({ class: "mt-1.5 truncate text-xs text-muted" }, `${formatCreatedAt(order.createdAt, business.locale)} · ${countLabel(itemCount(order), "producto", "productos")}`),
         ),
@@ -120,6 +166,7 @@ function OrderCard(order, index, site, productsById) {
         ),
         ul({ class: `divide-y divide-foreground/10 ${RADIUS_SM} bg-surface/60 px-3` }, order.items.map((item) => OrderItem(item, business, productsById))),
         order.notes ? p({ class: "mt-3 text-xs text-foreground/70" }, span({ class: "font-semibold text-foreground" }, "Notas: "), order.notes) : null,
+        DepositSection(order, business),
         div(
           { class: "mt-4 flex flex-wrap items-center justify-between gap-3" },
           p(

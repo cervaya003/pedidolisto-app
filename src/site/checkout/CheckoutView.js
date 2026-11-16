@@ -6,7 +6,7 @@ import Icon from "../../ui/Icon.js";
 import { formatPrice } from "../../core/format.js";
 import { IS_PREVIEW } from "../../core/previewChannel.js";
 import { MAX, PHONE_COUNTRIES, PHONE_DIGITS, dialOf, filters, formatPhone } from "../../core/textRules.js";
-import { cartView, getCartCount, getCartTotal } from "../cart/cartStore.js";
+import { cartView, getCartCount, getCartDeposit, getCartTotal } from "../cart/cartStore.js";
 import DatePicker from "./DatePicker.js";
 import DrawerHeader from "../cart/DrawerHeader.js";
 import {
@@ -282,6 +282,34 @@ function Summary(business, lines) {
         span({ class: "text-lg font-semibold text-foreground tabular-nums" }, formatPrice(business, getCartTotal(lines))),
       ),
       approximate ? p({ class: "mt-1 text-xs text-muted" }, "Algunos precios son «desde»: te confirmamos el total.") : null,
+    ),
+    DepositNotice(business, lines),
+  );
+}
+
+/** Aviso antes de enviar: este pedido se aparta con anticipo. Sin sorpresas al terminar. */
+function DepositNotice(business, lines) {
+  const deposit = getCartDeposit(lines, business);
+  if (!(deposit > 0)) return null;
+  const hours = business.payment.depositHours ?? 24;
+  const names = lines.filter((line) => line.product.depositType && line.product.depositType !== "none").map((line) => line.product.name);
+  return div(
+    { class: `mt-3 ${RADIUS} border border-accent/30 bg-accent/5 p-4` },
+    div(
+      { class: "flex items-start gap-3" },
+      span({ class: "grid size-9 shrink-0 place-items-center rounded-full bg-accent/15 text-accent" }, Icon("card", "size-4")),
+      div(
+        { class: "min-w-0 flex-1" },
+        div(
+          { class: "flex flex-wrap items-baseline justify-between gap-x-3" },
+          p({ class: "text-sm font-semibold text-foreground" }, "Anticipo para apartar"),
+          p({ class: "font-heading text-xl font-medium text-accent tabular-nums" }, formatPrice(business, deposit)),
+        ),
+        p(
+          { class: "mt-1 text-xs leading-relaxed text-foreground/75" },
+          `${[...new Set(names)].join(", ")} se prepara${names.length > 1 ? "n" : ""} por encargo. Al enviar verás los datos para transferir; tienes ${hours < 24 ? `${hours} horas` : hours === 24 ? "24 horas" : `${hours / 24} días`} para pagar el anticipo. El resto (${formatPrice(business, getCartTotal(lines) - deposit)}) lo pagas al recibir.`,
+        ),
+      ),
     ),
   );
 }

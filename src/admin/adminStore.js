@@ -2,7 +2,7 @@ import van from "vanjs-core";
 import { API_URL, ApiError, apiClient } from "../core/apiClient.js";
 import { metaStore } from "../core/metaStore.js";
 import { getIn, setIn } from "../core/objectPath.js";
-import { compressImage } from "./imageCompression.js";
+import { compressImage } from "../core/imageCompression.js";
 
 const TOKEN_STORAGE_KEY = "catalogo.admin.token";
 const NOTICE_DURATION_MS = 4000;
@@ -50,6 +50,7 @@ function setSite(site, { refreshForms = true } = {}) {
 }
 
 function logout() {
+  window.dispatchEvent(new Event("admin:logout"));
   tokenStorage.write("");
   token.val = "";
   draft.val = null;

@@ -55,6 +55,8 @@ const PATHS = {
   home: "M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5",
   lock: "M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3",
   loader: "M12 3a9 9 0 1 0 9 9",
+  card: "M3 6h18v12H3zM3 10h18M7 15h3",
+  copy: "M9 9h11v11H9zM5 15H4V4h11v1",
   shield: "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3Zm-3.5 9 2.5 2.5 4.5-5",
 };
 

@@ -6,6 +6,8 @@ const meta = () => metaStore.get();
 const fromMap = (map) => Object.entries(map).map(([value, label]) => ({ value, label: label.label ?? label }));
 const fromList = (list) => list.map((value) => ({ value, label: String(value) }));
 
+const digitsOnly = (value) => value.replace(/\D/g, "");
+
 const NAV_LABEL = { key: "navLabel", label: "Texto en el menú de navegación", type: "text", hint: "Déjalo vacío para no mostrarla en el menú." };
 const HEADING_FIELDS = [
   { key: "eyebrow", label: "Etiqueta superior", type: "text" },
@@ -74,6 +76,32 @@ export const getBusinessGroups = () => [
         ],
         hint: "Solo se aceptan domicilios en estas ciudades. Con una sola, queda fija en el formulario. Vacío: cualquier ciudad.",
       },
+    ],
+  },
+  {
+    title: "Pagos",
+    icon: "card",
+    hint: "Datos para que el cliente te pague por transferencia. Los ve al terminar su pedido y en su comprobante por correo. Llena solo los que uses.",
+    fields: [
+      { key: "payment.enabled", label: "Mostrar datos para transferencia", type: "toggle", icon: "card", hint: "Al activarlo, revisa bien cada número: el dinero llega a donde diga aquí." },
+      { key: "payment.bank", label: "Banco", type: "text", icon: "store", maxLength: 60, placeholder: "BBVA, Banorte, Nu, Mercado Pago…" },
+      { key: "payment.holder", label: "Titular", type: "text", icon: "user", maxLength: 100, placeholder: "Nombre como aparece en el banco", hint: "El cliente lo ve en su app al transferir: así confirma que es tu cuenta." },
+      { key: "payment.clabe", label: "CLABE interbancaria", type: "text", icon: "lock", inputmode: "numeric", maxLength: 18, filter: digitsOnly, placeholder: "18 dígitos", hint: "La forma más segura de recibir transferencias SPEI. Se revisa el dígito verificador al publicar." },
+      { key: "payment.card", label: "Tarjeta de débito", type: "text", icon: "card", inputmode: "numeric", maxLength: 16, filter: digitsOnly, placeholder: "16 dígitos", hint: "Opcional. Muchas apps permiten transferir a una tarjeta; nunca compartas la fecha de vencimiento ni el CVV." },
+      { key: "payment.account", label: "Número de cuenta", type: "text", icon: "coin", inputmode: "numeric", maxLength: 20, filter: digitsOnly, hint: "Opcional, para depósitos en ventanilla o transferencias del mismo banco." },
+      { key: "payment.phone", label: "Celular para DiMo", type: "text", icon: "phone", inputmode: "numeric", maxLength: 10, filter: digitsOnly, placeholder: "10 dígitos", hint: "Opcional. Solo si lo diste de alta en DiMo desde la app de tu banco." },
+      { key: "payment.qrUrl", label: "Código QR para pagar", type: "image", fit: "contain", hint: "Opcional. Captura del QR de cobro de tu app (CoDi, Mercado Pago…). Usa un QR SIN monto: sirve para cualquier pedido y no caduca." },
+      {
+        key: "payment.depositHours",
+        label: "Plazo para pagar el anticipo",
+        type: "select",
+        icon: "clock",
+        numeric: true,
+        fallback: 24,
+        options: [6, 12, 24, 48, 72].map((hours) => ({ value: hours, label: hours < 24 ? `${hours} horas` : hours === 24 ? "24 horas (1 día)" : `${hours / 24} días` })),
+        hint: "Solo para productos con anticipo. Pasado el plazo, el pedido se marca como vencido en Pedidos y tú decides si cancelarlo.",
+      },
+      { key: "payment.instructions", label: "Indicaciones", type: "textarea", maxLength: 300, placeholder: "Usa tu folio como concepto y envíanos tu comprobante por WhatsApp." },
     ],
   },
   {

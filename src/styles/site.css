@@ -27,6 +27,34 @@
   --animate-header-in: header-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-fade-down: fade-down 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   --animate-badge-pop: badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  /* Tarjeta de pago: entra girando desde abajo, como si la sacaran de la cartera. */
+  --animate-card-in: card-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Burbuja flotante: sube y baja suave para invitar a tocarla. */
+  --animate-bubble-float: bubble-float 3.2s ease-in-out infinite;
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: perspective(900px) translateY(48px) rotateX(55deg) scale(0.82);
+    }
+    60% {
+      opacity: 1;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes bubble-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
 
   @keyframes header-in {
     from {

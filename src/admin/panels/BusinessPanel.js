@@ -1,4 +1,4 @@
-// Negocio dividido en apartados con chips (como Apariencia): Identidad, Contacto, Entregas y Región.
+// Negocio dividido en apartados con chips (como Apariencia): Identidad, Contacto, Entregas, Pagos y Región.
 import van from "vanjs-core";
 import SchemaForm from "../components/SchemaForm.js";
 import { FieldGroup, GroupHint, PanelHeader, SectionChips } from "../components/Panel.js";

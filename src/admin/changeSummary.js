@@ -51,6 +51,8 @@ const PRODUCT_LABELS = {
   customizable: "personalización",
   allowNotes: "personalización",
   options: "personalización",
+  depositType: "anticipo",
+  depositValue: "anticipo",
 };
 
 function productChanges(before = [], after = [], business, categories) {
@@ -187,9 +189,17 @@ function themeChanges(before = {}, after = {}) {
 
 function businessChanges(before = {}, after = {}) {
   const labels = new Map(getBusinessGroups().flatMap((group) => group.fields).map((field) => [field.key, field.label]));
-  return Object.keys({ ...before, ...after })
-    .filter((key) => !same(before[key], after[key]))
-    .map((key) => ({ kind: "modified", title: labels.get(key) ?? key, detail: fromTo(before[key], after[key]) }));
+  const isGroup = (value) => value && typeof value === "object" && !Array.isArray(value);
+  // Objetos anidados (p. ej. «payment»): se compara campo por campo con su etiqueta («payment.clabe»).
+  const changed = (a = {}, b = {}, prefix = "") =>
+    Object.keys({ ...a, ...b })
+      .filter((key) => !same(a[key], b[key]))
+      .flatMap((key) =>
+        isGroup(a[key]) || isGroup(b[key])
+          ? changed(a[key] ?? {}, b[key] ?? {}, `${prefix}${key}.`)
+          : [{ kind: "modified", title: labels.get(`${prefix}${key}`) ?? `${prefix}${key}`, detail: fromTo(a[key], b[key]) }],
+      );
+  return changed(before, after);
 }
 
 /**

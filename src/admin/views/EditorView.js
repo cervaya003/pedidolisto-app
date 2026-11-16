@@ -1,4 +1,5 @@
 import van from "vanjs-core";
+import OrdersView from "./OrdersView.js";
 import PreviewPanel from "./PreviewPanel.js";
 import Toolbar from "./Toolbar.js";
 import SidebarResizer, { sidebarWidth } from "../components/SidebarResizer.js";
@@ -6,6 +7,7 @@ import Toast from "../components/Toast.js";
 import Icon from "../../ui/Icon.js";
 import { adminStore } from "../adminStore.js";
 import { PANELS } from "../panels/index.js";
+import { adminView, startOrdersPolling } from "../ordersStore.js";
 
 const { div, aside, nav, button, span } = van.tags;
 
@@ -41,12 +43,15 @@ const Loader = () => div({ class: "grid h-40 place-items-center" }, div({ class:
 
 export default function EditorView() {
   if (!adminStore.draft.rawVal) adminStore.load();
+  startOrdersPolling();
 
   return div(
     { class: "flex h-dvh flex-col" },
     Toolbar({ mobileMode }),
+    // Pedidos ocupa toda la pantalla; el editor sigue montado (oculto) para no perder lo que se estaba editando.
+    () => (adminView.val === "orders" ? OrdersView() : div({ hidden: true })),
     div(
-      { class: "flex min-h-0 flex-1" },
+      { class: () => `min-h-0 flex-1 ${adminView.val === "orders" ? "hidden" : "flex"}` },
       aside(
         {
           class: () =>
