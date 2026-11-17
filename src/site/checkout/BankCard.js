@@ -1,10 +1,12 @@
-// Tarjeta «de plástico» con los datos para transferir: banco, número, titular. Toma los colores del tema
+// Tarjeta «de plástico» con los datos para transferir: banco, número, titular. Si el banco está en la lista
+// (BBVA, Santander, Nu…) o el dueño eligió un color, toma ese diseño; si no, los colores del tema
 // (primario → acento) para verse como parte del sitio. Proporción real de una tarjeta (85.6 × 54 mm).
 // Los textos se escalan con el ancho de la tarjeta (unidades cqw), así se ve igual en celular y escritorio.
 import van from "vanjs-core";
+import { cardDesign } from "./bankBrands.js";
 
 const { div, p, span } = van.tags;
-const { svg, path, rect, circle, defs, linearGradient, stop } = van.tags("http://www.w3.org/2000/svg");
+const { svg, path, rect, circle, defs, linearGradient, stop, pattern } = van.tags("http://www.w3.org/2000/svg");
 
 /** Dígitos en grupos de 4: «0121 8000 1234 5678 99». */
 export const groupDigits = (value = "") => value.replace(/(\d{4})(?=\d)/g, "$1 ");
@@ -42,13 +44,66 @@ const Mark = () =>
     circle({ cx: 26, cy: 12, r: 10, fill: "currentColor", opacity: 0.3 }),
   );
 
+// Adornos de cada diseño, encima del fondo. viewBox con la proporción de la tarjeta.
+const Overlay = (...children) =>
+  svg({ viewBox: "0 0 100 63", preserveAspectRatio: "xMidYMid slice", class: "pointer-events-none absolute inset-0 size-full", "aria-hidden": "true" }, ...children);
+
+const DECOR = {
+  // Círculos grandes (tema del sitio o color libre).
+  classic: () => [
+    span({ class: "pointer-events-none absolute -top-[30%] -right-[20%] size-[80%] rounded-full bg-white/10", "aria-hidden": "true" }),
+    span({ class: "pointer-events-none absolute -bottom-[45%] -left-[15%] size-[85%] rounded-full bg-black/10", "aria-hidden": "true" }),
+  ],
+  // Ondas azul claro que cruzan la tarjeta.
+  waves: () =>
+    Overlay(
+      path({ d: "M-5 48 C 25 30, 55 70, 105 22 L105 70 L-5 70 Z", fill: "#5bbeff", opacity: 0.18 }),
+      path({ d: "M-5 56 C 30 40, 60 72, 105 36 L105 70 L-5 70 Z", fill: "#1973b8", opacity: 0.35 }),
+      path({ d: "M40 -5 C 60 15, 80 5, 105 18", stroke: "#5bbeff", "stroke-width": 0.6, fill: "none", opacity: 0.5 }),
+    ),
+  // Curvas como llama, a la derecha.
+  flame: () =>
+    Overlay(
+      [0, 1, 2].map((index) =>
+        path({
+          d: `M${78 + index * 6} 66 C ${60 + index * 6} 40, ${96 + index * 4} 30, ${80 + index * 6} -4`,
+          stroke: "#ffffff",
+          "stroke-width": 5 - index,
+          "stroke-linecap": "round",
+          fill: "none",
+          opacity: 0.16 - index * 0.03,
+        }),
+      ),
+    ),
+  // Limpio, apenas un brillo.
+  minimal: () => span({ class: "pointer-events-none absolute -top-[60%] -left-[25%] size-[110%] rounded-full bg-white/[0.07]", "aria-hidden": "true" }),
+  // Franja diagonal oscura.
+  stripe: () =>
+    Overlay(
+      path({ d: "M62 -5 L105 -5 L105 70 L36 70 Z", fill: "#000000", opacity: 0.16 }),
+      path({ d: "M70 -5 L74 -5 L48 70 L44 70 Z", fill: "#ffffff", opacity: 0.12 }),
+    ),
+  // Puntos en una esquina y un círculo grande.
+  dots: () =>
+    Overlay(
+      defs(pattern({ id: "bank-card-dots", width: 4, height: 4, patternUnits: "userSpaceOnUse" }, circle({ cx: 2, cy: 2, r: 0.7, fill: "currentColor" }))),
+      circle({ cx: 92, cy: 6, r: 30, fill: "#ffffff", opacity: 0.25 }),
+      rect({ x: 58, y: 34, width: 44, height: 32, fill: "url(#bank-card-dots)", opacity: 0.18 }),
+    ),
+};
+
 /**
  * `payment`: business.payment. Muestra la tarjeta si hay número; si no, la CLABE o la cuenta.
  * Es decorativa para leer de un vistazo: los botones de copiar están en la ventana de pago (PaymentWidget).
+ * `fallback`: diseño a usar si no hay banco conocido ni color (el admin no tiene los colores del tema).
  */
-export default function BankCard(payment) {
+export default function BankCard(payment, { fallback = null } = {}) {
   const { bank, holder, card, clabe, account } = payment;
   const [label, number] = card ? ["Tarjeta de débito", card] : clabe ? ["CLABE interbancaria", clabe] : account ? ["Número de cuenta", account] : ["", ""];
+  const design = cardDesign(payment) ?? fallback;
+  const colors = design ? "" : "bg-linear-135 from-primary via-primary to-accent text-on-primary";
+  // Sombra del número solo con letras claras: sobre fondos claros (Spin) se vería borrosa.
+  const numberShadow = design && design.text !== "#ffffff" ? "" : "[text-shadow:0_1px_1px_rgba(0,0,0,.35)]";
 
   return div(
     { class: "@container mx-auto w-full max-w-sm [perspective:1000px]" },
@@ -56,12 +111,11 @@ export default function BankCard(payment) {
       {
         role: "img",
         "aria-label": [bank && `Banco ${bank}`, label && `${label} ${number}`, holder && `a nombre de ${holder}`].filter(Boolean).join(", "),
-        class:
-          "group relative aspect-[1.586] w-full overflow-hidden rounded-[5cqw] bg-linear-135 from-primary via-primary to-accent text-on-primary shadow-[0_18px_40px_-12px_rgba(0,0,0,.45)] ring-1 ring-white/10 transition-transform duration-500 [transform-style:preserve-3d] motion-safe:hover:[transform:rotateX(6deg)_rotateY(-8deg)]",
+        style: design ? `background:${design.background};color:${design.text}` : "",
+        class: `group relative aspect-[1.586] w-full overflow-hidden rounded-[5cqw] ${colors} shadow-[0_18px_40px_-12px_rgba(0,0,0,.45)] ring-1 ring-white/10 transition-transform duration-500 [transform-style:preserve-3d] motion-safe:hover:[transform:rotateX(6deg)_rotateY(-8deg)]`,
       },
-      // Texturas: círculos grandes y un brillo diagonal que se mueve al pasar el mouse.
-      span({ class: "pointer-events-none absolute -top-[30%] -right-[20%] size-[80%] rounded-full bg-white/10", "aria-hidden": "true" }),
-      span({ class: "pointer-events-none absolute -bottom-[45%] -left-[15%] size-[85%] rounded-full bg-black/10", "aria-hidden": "true" }),
+      (DECOR[design?.decor] ?? DECOR.classic)(),
+      // Brillo diagonal que se mueve al pasar el mouse.
       span({
         class:
           "pointer-events-none absolute inset-0 bg-linear-110 from-transparent via-white/25 to-transparent opacity-60 transition-transform duration-700 [transform:translateX(-60%)] motion-safe:group-hover:[transform:translateX(60%)]",
@@ -71,7 +125,10 @@ export default function BankCard(payment) {
         { class: "relative flex h-full flex-col justify-between p-[6.5cqw]" },
         div(
           { class: "flex items-start justify-between gap-3" },
-          p({ class: "truncate font-heading text-[6.5cqw] leading-none font-semibold tracking-tight" }, bank || "Transferencia"),
+          p(
+            { class: `truncate ${design?.nameSize ?? "text-[6.5cqw]"} leading-none ${design?.nameClass ? `font-sans ${design.nameClass}` : "font-heading font-semibold tracking-tight"}` },
+            bank || "Transferencia",
+          ),
           Contactless(),
         ),
         div(
@@ -80,7 +137,7 @@ export default function BankCard(payment) {
           label ? p({ class: "text-[3cqw] font-medium tracking-[0.18em] uppercase opacity-70" }, label) : null,
           number
             ? p(
-                { class: "-mt-[2cqw] font-mono text-[clamp(0.8rem,6.2cqw,1.6rem)] leading-none font-semibold tracking-[0.06em] whitespace-nowrap tabular-nums [text-shadow:0_1px_1px_rgba(0,0,0,.35)]" },
+                { class: `-mt-[2cqw] font-mono text-[clamp(0.8rem,6.2cqw,1.6rem)] leading-none font-semibold tracking-[0.06em] whitespace-nowrap tabular-nums ${numberShadow}` },
                 groupDigits(number),
               )
             : null,

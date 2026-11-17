@@ -61,7 +61,7 @@ export default function ProductGallery(product, { radius = "rounded-card", layou
       tabindex: "0",
       "aria-roledescription": "carrusel",
       "aria-label": `Fotos de ${product.name}`,
-      class: "no-scrollbar flex size-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain outline-none",
+      class: "no-scrollbar flex size-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none",
       onkeydown: (event) => {
         const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
         if (step) {

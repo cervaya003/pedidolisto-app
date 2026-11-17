@@ -210,7 +210,8 @@ function StickyHeader(header, product, title) {
 
 /**
  * Barra fija al pie de la ficha: cantidad, total en vivo y botones. Siempre visible al hacer scroll.
- * Celular: dos filas (total + cantidad arriba, botones abajo a todo lo ancho). Desde `sm`: una sola fila.
+ * Celular: total + cantidad arriba y, debajo, los botones uno sobre otro a todo lo ancho («Agregar» primero,
+ * con el color principal; «Pedir ahora» abajo en un tono suave). Desde `sm`: una sola fila.
  */
 function PurchaseBar(site, purchase) {
   const { business } = site;
@@ -225,13 +226,19 @@ function PurchaseBar(site, purchase) {
       ),
       QuantityStepper({ value: () => purchase.quantity.val, onChange: (value) => (purchase.quantity.val = value), min: 1, size: "lg" }),
       div(
-        { class: "flex w-full items-center gap-2 sm:w-auto sm:flex-1 sm:justify-end sm:gap-3" },
+        { class: "flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-1 sm:flex-row sm:items-center sm:justify-end sm:gap-3" },
         button(
-          { type: "button", onclick: purchase.orderNow, title: "Agregarlo y realizar el pedido", class: "btn-secondary h-11 flex-1 px-3.5 text-sm whitespace-nowrap sm:flex-none" },
+          {
+            type: "button",
+            onclick: purchase.orderNow,
+            title: "Agregarlo y realizar el pedido",
+            class:
+              "btn-secondary h-12 w-full px-3.5 text-base whitespace-nowrap max-sm:border-transparent max-sm:bg-primary/10 max-sm:backdrop-blur-none sm:h-11 sm:w-auto sm:text-sm",
+          },
           "Pedir ahora",
         ),
         button(
-          { type: "button", onclick: purchase.add, class: "btn-primary h-11 min-w-0 flex-1 px-4 text-base whitespace-nowrap sm:max-w-xs" },
+          { type: "button", onclick: purchase.add, class: "btn-primary h-12 w-full min-w-0 px-4 text-base whitespace-nowrap sm:h-11 sm:w-auto sm:flex-1 sm:max-w-xs" },
           Icon("cart", "size-5 shrink-0"),
           span({ class: "truncate" }, "Agregar"),
         ),

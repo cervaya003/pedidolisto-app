@@ -115,7 +115,7 @@ export default function MarketHeader(site, products) {
       ? nav(
           { class: "border-t border-on-primary/10", "aria-label": "Categorías" },
           div(
-            { class: "no-scrollbar mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-4 sm:px-6" },
+            { class: "no-scrollbar mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain px-4 sm:px-6" },
             CategoryLink(ALL_CATEGORIES, "Todo"),
             favoritesLabel ? CategoryLink(FAVORITES_CATEGORY, `★ ${favoritesLabel}`) : null,
             categories.map((category) => CategoryLink(category.id, category.name)),

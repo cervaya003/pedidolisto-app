@@ -101,8 +101,8 @@ function fillFrom(saved) {
 loadCustomer().then((saved) => saved && fillFrom(saved));
 
 
-/** Valida en el navegador (el API vuelve a validar todo). Devuelve el primer campo con error. */
-function validate(business) {
+/** Revisa todo el formulario en el navegador (el API vuelve a validar todo). Devuelve { campo: mensaje }. */
+function collectErrors(business) {
   const next = {};
   const value = (state) => state.rawVal.trim();
 
@@ -148,12 +148,101 @@ function validate(business) {
     if (!PATTERNS.PLACE.test(value(address.state))) next.state = "Solo letras.";
   }
 
-  errors.val = next;
-  const first = Object.keys(next)[0];
+  return next;
+}
+
+/** Muestra los errores (todos, o solo los de `keys`) y devuelve el primer campo con error. */
+function showErrors(next, keys) {
+  const shown = keys ? Object.fromEntries(Object.entries(next).filter(([key]) => keys.includes(key))) : next;
+  errors.val = shown;
+  const first = Object.keys(shown)[0];
   // Los datos recordados con algún error se abren para corregirlos.
-  if (["name", "phone", "email"].includes(first)) editingContact.val = true;
+  if (STEP_FIELDS.contact.includes(first)) editingContact.val = true;
   return first;
 }
+
+const validate = (business) => showErrors(collectErrors(business));
+
+// ── Pasos del pedido ─────────────────────────────────────────────────────────────────────────────
+// Una pregunta por pantalla: tus datos → fecha → entrega → notas → resumen. En celular no hay que
+// recorrer un formulario largo; cada paso se valida antes de avanzar.
+
+/** Campos que se revisan en cada paso (los ids son los mismos que usa `errors`). */
+const STEP_FIELDS = {
+  contact: ["name", "phone", "email"],
+  date: ["date"],
+  delivery: ["delivery", "street", "exterior", "interior", "neighborhood", "postalCode", "city", "state"],
+  notes: [],
+  review: [],
+};
+
+/** Pasos de este negocio: sin formas de entrega configuradas no se pregunta dónde (se coordina después). */
+export const checkoutSteps = (business) => ["contact", "date", ...(deliveryOptions(business).length ? ["delivery"] : []), "notes", "review"];
+
+export const step = van.state("contact");
+/** 1 al avanzar, -1 al regresar: decide hacia dónde se desliza la pantalla. */
+export const stepDirection = van.state(1);
+/** Se llegó a un paso desde «Cambiar» en el resumen: al continuar se vuelve directo al resumen. */
+export const editingFromReview = van.state(false);
+
+/** Paso donde se corrige un campo (para llevar ahí al cliente si el API o la validación final lo rechaza). */
+const stepOfField = (key) => Object.keys(STEP_FIELDS).find((name) => STEP_FIELDS[name].includes(key)) ?? "review";
+
+export function goToStep(name, direction = 1) {
+  stepDirection.val = direction;
+  step.val = name;
+}
+
+/** Valida el paso actual y pasa al siguiente. Devuelve el primer campo con error, o null. */
+export function nextStep(business) {
+  const steps = checkoutSteps(business);
+  const current = step.rawVal;
+  const invalid = showErrors(collectErrors(business), STEP_FIELDS[current] ?? []);
+  if (invalid) return invalid;
+  if (editingFromReview.rawVal) {
+    editingFromReview.val = false;
+    goToStep("review");
+    return null;
+  }
+  goToStep(steps[Math.min(steps.indexOf(current) + 1, steps.length - 1)]);
+  return null;
+}
+
+/** Regresa un paso. Devuelve false si ya estaba en el primero (entonces se vuelve al carrito). */
+export function previousStep(business) {
+  const steps = checkoutSteps(business);
+  const index = steps.indexOf(step.rawVal);
+  if (editingFromReview.rawVal) {
+    editingFromReview.val = false;
+    goToStep("review", -1);
+    return true;
+  }
+  if (index <= 0) return false;
+  errors.val = {};
+  goToStep(steps[index - 1], -1);
+  return true;
+}
+
+/** «Cambiar» desde el resumen. */
+export function editStep(name) {
+  editingFromReview.val = true;
+  if (name === "contact") editingContact.val = true;
+  goToStep(name, -1);
+}
+
+// Cada vez que se entra a los datos del pedido se empieza desde el principio. Con datos recordados
+// se salta «Tus datos» (se ven y se cambian desde el resumen).
+let previousView = cartView.rawVal;
+van.derive(() => {
+  const view = cartView.val;
+  if (view === "checkout" && previousView !== "checkout") {
+    errors.val = {};
+    editingFromReview.val = false;
+    stepDirection.val = 1;
+    step.val = savedCustomer.rawVal && !editingContact.rawVal ? "date" : "contact";
+  }
+  previousView = view;
+});
 
 function buildPayload(lines) {
   const delivery = form.delivery.rawVal;
@@ -172,6 +261,9 @@ function buildPayload(lines) {
     website: form.website.rawVal,
   };
 }
+
+/** Entrega elegida en palabras, para el resumen antes de confirmar. */
+export const deliveryText = () => describeDelivery(buildPayload([]));
 
 /** Resumen legible de la entrega para la pantalla de éxito. */
 function describeDelivery(payload) {
@@ -201,7 +293,12 @@ export async function submitOrder(business, lines) {
   if (status.rawVal === "sending") return null;
   submitError.val = "";
   const invalid = validate(business);
-  if (invalid) return invalid;
+  if (invalid) {
+    // Algo quedó mal en un paso anterior: se lleva al cliente a ese paso para corregirlo.
+    editingFromReview.val = true;
+    goToStep(stepOfField(invalid), -1);
+    return invalid;
+  }
 
   if (IS_PREVIEW) {
     submitError.val = "Estás en la vista previa: aquí los pedidos no se envían.";
@@ -220,6 +317,8 @@ export async function submitOrder(business, lines) {
       delivery: describeDelivery(payload),
       date: formatLongDate(payload.deliveryDate, locale),
       itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
+      // Lo que pidió, para mostrarlo en la confirmación (el carrito se vacía enseguida).
+      items: lines.map((line) => ({ name: line.product.name, quantity: line.quantity, imageUrl: line.product.imageUrl ?? "", subtotal: line.unitPrice * line.quantity })),
     };
     await rememberOrForget(payload);
     // «Mis pedidos» se lee del API: el pedido nuevo aparece la próxima vez que se abra.

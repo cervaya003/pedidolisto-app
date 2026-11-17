@@ -84,7 +84,7 @@ export const getBusinessGroups = () => [
     hint: "Datos para que el cliente te pague por transferencia. Los ve al terminar su pedido y en su comprobante por correo. Llena solo los que uses.",
     fields: [
       { key: "payment.enabled", label: "Mostrar datos para transferencia", type: "toggle", icon: "card", hint: "Al activarlo, revisa bien cada número: el dinero llega a donde diga aquí." },
-      { key: "payment.bank", label: "Banco", type: "text", icon: "store", maxLength: 60, placeholder: "BBVA, Banorte, Nu, Mercado Pago…" },
+      { key: "payment.bank", label: "Banco", type: "bank", icon: "store", maxLength: 60 },
       { key: "payment.holder", label: "Titular", type: "text", icon: "user", maxLength: 100, placeholder: "Nombre como aparece en el banco", hint: "El cliente lo ve en su app al transferir: así confirma que es tu cuenta." },
       { key: "payment.clabe", label: "CLABE interbancaria", type: "text", icon: "lock", inputmode: "numeric", maxLength: 18, filter: digitsOnly, placeholder: "18 dígitos", hint: "La forma más segura de recibir transferencias SPEI. Se revisa el dígito verificador al publicar." },
       { key: "payment.card", label: "Tarjeta de débito", type: "text", icon: "card", inputmode: "numeric", maxLength: 16, filter: digitsOnly, placeholder: "16 dígitos", hint: "Opcional. Muchas apps permiten transferir a una tarjeta; nunca compartas la fecha de vencimiento ni el CVV." },

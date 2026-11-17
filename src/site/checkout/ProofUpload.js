@@ -18,8 +18,12 @@ const errorMessage = (error) => {
   return error.message || "No pudimos subir tu comprobante. Inténtalo de nuevo.";
 };
 
-/** `publicId`: llave del pedido. `count`: comprobantes ya subidos. `onUploaded(count)`: tras subir uno. */
-export default function ProofUpload({ publicId, count = 0, onUploaded, label: title = "" }) {
+/**
+ * `publicId`: llave del pedido. `count`: comprobantes ya subidos. `onUploaded(count)`: tras subir uno.
+ * `prominent`: zona grande y llamativa (en el detalle del pedido es la acción principal).
+ * `inputId`: id del <input type=file>, para abrirlo desde otro botón.
+ */
+export default function ProofUpload({ publicId, count = 0, onUploaded, label: title = "", prominent = false, inputId }) {
   const uploaded = van.state(count);
   const status = van.state("idle"); // idle | sending | done | error
   const error = van.state("");
@@ -46,6 +50,7 @@ export default function ProofUpload({ publicId, count = 0, onUploaded, label: ti
   }
 
   const fileInput = input({
+    ...(inputId ? { id: inputId } : {}),
     type: "file",
     accept: "image/*",
     class: "sr-only",
@@ -70,7 +75,25 @@ export default function ProofUpload({ publicId, count = 0, onUploaded, label: ti
     () =>
       uploaded.val >= MAX_PROOFS
         ? span({ hidden: true })
-        : label(
+        : prominent
+          ? label(
+              {
+                class: () =>
+                  `flex cursor-pointer flex-col items-center gap-2 ${RADIUS} border-2 border-dashed border-primary/35 bg-primary/[0.04] px-5 py-7 text-center transition hover:border-primary/60 hover:bg-primary/[0.08] focus-within:border-primary ${
+                    status.val === "sending" ? "cursor-wait opacity-70" : ""
+                  }`,
+              },
+              fileInput,
+              span(
+                { class: "grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-md" },
+                () => (status.val === "sending" ? Icon("loader", "size-6 animate-spin") : Icon("image", "size-6")),
+              ),
+              span({ class: "text-base font-semibold text-foreground" }, () =>
+                status.val === "sending" ? "Subiendo…" : uploaded.val ? "Subir otro comprobante" : "Sube tu comprobante aquí",
+              ),
+              span({ class: "text-xs text-muted" }, "Foto o captura de pantalla de tu transferencia"),
+            )
+          : label(
             {
               class: () =>
                 `flex cursor-pointer items-center justify-center gap-2 ${RADIUS} border-2 border-dashed border-foreground/20 px-4 py-3.5 text-sm font-medium text-foreground transition hover:border-accent hover:bg-accent/5 focus-within:border-accent ${

@@ -63,5 +63,12 @@ export function resetOrders() {
   ordersStatus.val = "idle";
 }
 
-export const openOrders = () => (isOrdersOpen.val = true);
+/** publicId del pedido abierto en detalle; "" muestra la lista. */
+export const selectedOrder = van.state("");
+
+/** Abre «Mis pedidos»: en la lista o, con `publicId`, directo en ese pedido. */
+export const openOrders = (publicId = "") => {
+  selectedOrder.val = typeof publicId === "string" ? publicId : "";
+  isOrdersOpen.val = true;
+};
 export const closeOrders = () => (isOrdersOpen.val = false);

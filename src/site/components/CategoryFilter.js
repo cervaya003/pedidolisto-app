@@ -14,7 +14,7 @@ export default function CategoryFilter({ categories, products, activeCategory, f
   const countFor = (id) => (id === ALL_CATEGORIES ? products.length : products.filter((product) => isInCategory(product, id)).length);
 
   return div(
-    { class: "no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 sm:-mx-8 sm:px-8", "aria-label": "Filtrar por categoría" },
+    { class: "no-scrollbar -mx-5 flex gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain px-5 sm:-mx-8 sm:px-8", "aria-label": "Filtrar por categoría" },
     options
       .filter((option) => countFor(option.id) > 0)
       .map((option) => {

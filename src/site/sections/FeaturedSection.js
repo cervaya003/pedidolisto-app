@@ -27,7 +27,7 @@ export default function FeaturedSection({ section: config, site }) {
     {
       "data-reveal-stagger": "",
       class:
-        "no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:scroll-px-8 sm:gap-6 sm:px-8",
+        "no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain px-5 pb-2 sm:-mx-8 sm:scroll-px-8 sm:gap-6 sm:px-8",
     },
     featured.map((product) => li({ class: "w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-[31%]" }, FeaturedCard(product, site))),
   );

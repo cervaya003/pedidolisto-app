@@ -64,7 +64,7 @@ function CopyButton(label, value, { primary = false } = {}) {
 }
 
 /** A dónde mandar el comprobante: WhatsApp y/o correo del negocio. */
-function ProofContacts(business, folio) {
+export function ProofContacts(business, folio) {
   const message = folio ? `Hola, te envío el comprobante de mi pedido ${folio}.` : "Hola, te envío el comprobante de mi transferencia.";
   const whatsapp = whatsappLink(business, message);
   const email = business.email
@@ -72,9 +72,10 @@ function ProofContacts(business, folio) {
     : null;
   if (!whatsapp && !email) return null;
   return div(
-    { class: "flex flex-col gap-2 sm:flex-row" },
-    whatsapp ? a({ href: whatsapp, target: "_blank", rel: "noopener", class: "btn-secondary flex-1 py-2.5" }, Icon("chat", "size-4"), "Enviar por WhatsApp") : null,
-    email ? a({ href: email, class: "btn-secondary flex-1 py-2.5" }, Icon("mail", "size-4"), "Enviar por correo") : null,
+    // Uno sobre otro y a todo lo ancho, también en computadora: lado a lado el texto se partía en dos renglones.
+    { class: "flex flex-col gap-2" },
+    whatsapp ? a({ href: whatsapp, target: "_blank", rel: "noopener", class: "btn-secondary w-full py-3 whitespace-nowrap" }, Icon("chat", "size-4"), "Enviar por WhatsApp") : null,
+    email ? a({ href: email, class: "btn-secondary w-full py-3 whitespace-nowrap" }, Icon("mail", "size-4"), "Enviar por correo") : null,
   );
 }
 
@@ -221,36 +222,4 @@ export function PaymentBubble() {
       ),
     );
   };
-}
-
-// ── Cómo pagar (carrito y «Mis pedidos») ────────────────────────────────────────────────────
-
-/**
- * Texto breve: a dónde transferir y a dónde mandar el comprobante, con un botón que abre la tarjeta.
- * `amount` (número) y `folio` son opcionales.
- */
-export function PaymentHowTo(business, { amount, folio } = {}) {
-  const payment = business.payment;
-  if (!paymentNumber(payment)) return null;
-  const amountText = amount > 0 ? formatPrice(business, amount) : "";
-  const contacts = contactText(business);
-
-  return div(
-    { class: `mt-6 ${RADIUS} border border-foreground/10 p-4` },
-    p({ class: "flex items-center gap-2 text-xs font-semibold tracking-[0.16em] text-muted uppercase" }, Icon("card", "size-4"), "Cómo pagar"),
-    p(
-      { class: "mt-2 text-sm leading-relaxed text-foreground/80" },
-      "Transfiere",
-      amountText ? [" ", span({ class: "font-semibold text-foreground tabular-nums" }, amountText)] : "",
-      payment.bank ? ` a la tarjeta ${payment.bank}` : " a nuestra tarjeta",
-      payment.holder ? [" a nombre de ", span({ class: "font-semibold text-foreground" }, payment.holder)] : "",
-      contacts ? `, y envía tu comprobante ${contacts}${folio ? ` con tu folio ${folio}` : ""}.` : ".",
-    ),
-    button(
-      { type: "button", onclick: () => openPayment({ amount: amountText, folio }), class: "btn-primary mt-3 w-full py-3" },
-      Icon("card", "size-4"),
-      "Ver tarjeta y copiar número",
-    ),
-    div({ class: "mt-2" }, ProofContacts(business, folio)),
-  );
 }

@@ -59,7 +59,7 @@ function Sidebar(site, products, groups, favoritesLabel) {
 
 const MobileChips = (products, groups, favoritesLabel) =>
   div(
-    { class: "no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 lg:hidden", "aria-label": "Filtrar por categoría" },
+    { class: "no-scrollbar -mx-4 flex gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain px-4 lg:hidden", "aria-label": "Filtrar por categoría" },
     [
       { id: ALL_CATEGORIES, name: "Todo" },
       ...(favoritesLabel ? [{ id: FAVORITES_CATEGORY, name: `★ ${favoritesLabel}` }] : []),

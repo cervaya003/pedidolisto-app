@@ -24,7 +24,7 @@ export default function MarketDeals(site, products) {
   const featured = products.filter((product) => product.featured);
   if (!props || !featured.length) return null;
   const track = ul(
-    { class: "no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1" },
+    { class: "no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-1" },
     featured.map((product) => li({ class: "w-40 shrink-0 snap-start sm:w-48" }, MarketCard(product, site, { compact: true }))),
   );
   const scroll = (direction) => track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });

@@ -1,4 +1,5 @@
 import van from "vanjs-core";
+import BankPicker from "./BankPicker.js";
 import { withConfirm } from "./ConfirmDialog.js";
 import FontPicker from "./FontPicker.js";
 import GalleryField from "./GalleryField.js";
@@ -170,6 +171,7 @@ const RENDERERS = {
   font: (field, path) => Field(field, FontPicker(field, path), div),
   image: (field, path) => ImageField(field, path),
   gallery: (field, path) => GalleryField(field, path),
+  bank: (field, path) => BankPicker(field, path),
 
   items: (field, path) => {
     const version = van.state(0);

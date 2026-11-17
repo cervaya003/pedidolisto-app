@@ -78,7 +78,7 @@ export default function MoreProducts(site, product, onSelect) {
     h3({ class: "font-heading text-lg font-medium text-foreground sm:text-xl" }, "También te puede gustar"),
     // Celular: se desliza de lado. Escritorio: una fila de 3.
     ul(
-      { class: "no-scrollbar -mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:scroll-px-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0" },
+      { class: "no-scrollbar -mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain px-4 pb-1 sm:mx-0 sm:scroll-px-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0" },
       suggestions.map((item) => li({ class: "w-[62%] shrink-0 snap-start sm:w-auto" }, SuggestionCard(site, item, onSelect))),
     ),
   );

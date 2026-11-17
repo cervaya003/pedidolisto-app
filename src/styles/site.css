@@ -32,6 +32,24 @@
   /* Burbuja flotante: sube y baja suave para invitar a tocarla. */
   --animate-bubble-float: bubble-float 3.2s ease-in-out infinite;
 
+  /* Pasos del pedido: la nueva pregunta entra desde el lado hacia el que se avanza. */
+  --animate-step-next: step-next 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-step-back: step-back 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+
+  @keyframes step-next {
+    from {
+      opacity: 0;
+      transform: translateX(1.5rem);
+    }
+  }
+
+  @keyframes step-back {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+  }
+
   @keyframes card-in {
     from {
       opacity: 0;

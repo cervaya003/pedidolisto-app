@@ -20,7 +20,7 @@ export default function CartaIndex(groups, products, favoritesLabel = "") {
   const isActive = (entry) => spy.active.val === entry.id;
 
   const list = ol(
-    { class: "no-scrollbar flex flex-1 gap-6 overflow-x-auto py-4 sm:gap-8" },
+    { class: "no-scrollbar flex flex-1 gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain py-4 sm:gap-8" },
     entries.map((entry) =>
       li(
         { class: "shrink-0" },
