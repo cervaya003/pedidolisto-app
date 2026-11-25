@@ -10,7 +10,7 @@ import { siteStore } from "../../core/siteStore.js";
 import { savedCustomer } from "../checkout/checkoutStore.js";
 import { formatLongDate } from "../checkout/DatePicker.js";
 import { DepositBanner, formatDue } from "../checkout/OrderSuccess.js";
-import { ProofContacts, openPayment, paymentNumber } from "../payment/PaymentWidget.js";
+import { openPayment, paymentNumber } from "../payment/PaymentWidget.js";
 import ProofUpload from "../checkout/ProofUpload.js";
 import { describeChoices } from "../product/optionRules.js";
 import { DRAWER_CLASS, syncDialog } from "../templates/dialog.js";
@@ -22,11 +22,9 @@ const RADIUS = "rounded-[min(var(--site-radius),0.75rem)]";
 const RADIUS_SM = "rounded-[min(var(--site-radius),0.5rem)]";
 const DELIVERY_ICONS = { home: "home", point: "pin", arrange: "chat" };
 const ICON_BUTTON = "grid size-9 shrink-0 place-items-center rounded-full text-foreground transition hover:bg-foreground/5";
-const PROOF_INPUT_ID = "order-proof-input";
 
 // Botones grandes a todo lo ancho: principal con el color del negocio, secundario en tono suave.
 const BIG_BUTTON = `flex w-full items-center justify-center gap-2 ${RADIUS} px-5 py-4 text-base font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`;
-const PRIMARY = `${BIG_BUTTON} bg-primary text-on-primary hover:bg-primary/90 active:scale-[0.99]`;
 const SECONDARY = `${BIG_BUTTON} bg-primary/10 text-foreground hover:bg-primary/15`;
 
 // Cómo ve el cliente cada estado de su pedido.
@@ -166,51 +164,50 @@ const Step = (number, title, ...children) =>
     div({ class: "min-w-0 flex-1" }, p({ class: "pt-0.5 text-sm font-semibold text-foreground" }, title), ...children),
   );
 
-/** Anticipo pendiente: monto, plazo y los dos pasos. Subir el comprobante es lo más visible. */
+/** Botón para ver la tarjeta y copiar el número (abre la ventana de pago). */
+const CardButton = (business, order, amount) =>
+  button({ type: "button", onclick: () => openPayment({ amount, folio: order.folio }), class: `${SECONDARY} py-3 text-sm` }, Icon("card", "size-4"), "Ver tarjeta y copiar número");
+
+/** Comprobante: un botón que ofrece subirlo aquí, por WhatsApp o por correo (el mismo en los dos casos). */
+const SendProof = (business, order) =>
+  ProofUpload({ business, publicId: order.publicId, folio: order.folio, count: order.proofCount ?? 0, onUploaded: (count) => (order.proofCount = count) });
+
+/** Anticipo obligatorio pendiente: va hasta arriba. Monto y plazo, y los dos pasos para pagarlo. */
 function PayDeposit(order, business) {
-  const isDeposit = needsDeposit(order);
-  const overdue = isDeposit && order.depositDueAt && new Date(order.depositDueAt).getTime() < Date.now();
+  const overdue = order.depositDueAt && new Date(order.depositDueAt).getTime() < Date.now();
   const canTransfer = Boolean(paymentNumber(business.payment));
-  const amount = formatPrice(business, isDeposit ? order.deposit : order.total);
-  const contacts = ProofContacts(business, order.folio);
+  const amount = formatPrice(business, order.deposit);
 
   return section(
     { class: "space-y-5" },
-    isDeposit
-      ? DepositBanner(business, order)
-      : div(
-          { class: `${RADIUS} border border-accent/30 bg-accent/5 p-4 text-center` },
-          p({ class: "text-xs font-semibold tracking-[0.16em] text-accent uppercase" }, order.approximate ? "Total aproximado" : "Total a pagar"),
-          p({ class: "mt-1 font-heading text-4xl font-medium tracking-tight text-foreground tabular-nums" }, amount),
-          order.approximate ? p({ class: "mt-2 text-xs text-muted" }, "Algunos precios son «desde»: espera a que te confirmemos el monto final antes de transferir.") : null,
-        ),
+    DepositBanner(business, order),
     overdue
       ? p(
           { class: `${RADIUS_SM} bg-red-500/10 px-3 py-2 text-xs text-red-700` },
-          `El plazo terminó el ${formatDue(order.depositDueAt, business.locale)}. Si ya pagaste, sube tu comprobante o escríbenos.`,
+          `El plazo venció (${formatDue(order.depositDueAt, business.locale)}). Si ya pagaste, envía tu comprobante o escríbenos.`,
         )
       : null,
-    canTransfer
-      ? Step(
-          1,
-          `Transfiere ${amount}`,
-          p({ class: "mt-0.5 text-xs text-muted" }, `Usa tu folio ${order.folio} como concepto.`),
-          button({ type: "button", onclick: () => openPayment({ amount, folio: order.folio }), class: `${SECONDARY} mt-2.5 py-3 text-sm` }, Icon("card", "size-4"), "Ver tarjeta y copiar número"),
-        )
-      : null,
-    Step(
-      canTransfer ? 2 : 1,
-      "Sube tu comprobante",
-      ProofUpload({
-        publicId: order.publicId,
-        count: order.proofCount ?? 0,
-        prominent: true,
-        inputId: PROOF_INPUT_ID,
-        onUploaded: (count) => (order.proofCount = count),
-      }),
+    canTransfer ? Step(1, `Transfiere ${amount}`, p({ class: "mt-0.5 mb-2.5 text-xs text-muted" }, `Usa tu folio ${order.folio} como concepto.`), CardButton(business, order, amount)) : null,
+    Step(canTransfer ? 2 : 1, "Envía tu comprobante", div({ class: "mt-2.5" }, SendProof(business, order))),
+  );
+}
+
+/** Sin anticipo: el pago va al final, discreto. Ver la tarjeta y enviar el comprobante. */
+function PayAtEnd(order, business) {
+  const amount = formatPrice(business, order.total);
+  return section(
+    { class: `space-y-3 ${RADIUS} border border-foreground/10 p-4` },
+    div(
+      p({ class: "flex items-center gap-2 text-sm font-semibold text-foreground" }, Icon("card", "size-4 text-accent"), "Pagar por transferencia"),
+      p(
+        { class: "mt-1 text-xs leading-relaxed text-muted" },
+        order.approximate
+          ? "Algunos precios son «desde»: espera a que te confirmemos el monto final antes de transferir."
+          : `Transfiere ${amount} con tu folio ${order.folio} como concepto y envíanos tu comprobante.`,
+      ),
     ),
-    // Otras formas de enviarlo: visibles, pero al final.
-    contacts ? div({ class: "border-t border-foreground/10 pt-4" }, p({ class: "mb-2.5 text-xs text-muted" }, "¿Prefieres enviarlo por otro medio?"), contacts) : null,
+    CardButton(business, order, order.approximate ? "" : amount),
+    SendProof(business, order),
   );
 }
 
@@ -248,30 +245,16 @@ const Meta = (icon, label, value) =>
     div({ class: "min-w-0" }, dt({ class: "text-xs text-muted" }, label), dd({ class: "mt-0.5 text-sm font-medium break-words text-foreground" }, value)),
   );
 
-/** ¿La zona de subir comprobante del detalle está visible? */
-const uploadZoneVisible = van.state(false);
-let zoneObserver = null;
-
-function watchUploadZone(scroller) {
-  zoneObserver?.disconnect();
-  uploadZoneVisible.val = false;
-  setTimeout(() => {
-    const zone = scroller.querySelector(`#${PROOF_INPUT_ID}`)?.closest("label");
-    if (!zone) return;
-    zoneObserver = new IntersectionObserver(([entry]) => (uploadZoneVisible.val = entry.isIntersecting), { root: scroller, threshold: 0.5 });
-    zoneObserver.observe(zone);
-  });
-}
-
 function OrderDetail(order, site) {
   const { business } = site;
   const productsById = new Map(getVisibleProducts(site).map((product) => [product.id, product]));
   const askHref = whatsappLink(business, `Hola, quiero preguntar por mi pedido ${order.folio}.`);
-  const pending = canPay(order, business);
+  const depositDue = needsDeposit(order);
+  const payLater = !depositDue && canPay(order, business);
 
   const scroller = div(
     { class: "flex-1 space-y-7 overflow-y-auto overscroll-contain px-5 py-6 animate-step-next sm:px-6" },
-    pending ? PayDeposit(order, business) : DepositPaid(order, business),
+    depositDue ? PayDeposit(order, business) : DepositPaid(order, business),
     section(
       SectionTitle(`Lo que pediste (${itemCount(order)})`),
       ul({ class: "divide-y divide-foreground/10" }, order.items.map((item) => OrderItem(item, business, productsById))),
@@ -291,10 +274,9 @@ function OrderDetail(order, site) {
         order.notes ? Meta("chat", "Notas", order.notes) : null,
       ),
     ),
+    payLater ? PayAtEnd(order, business) : null,
     askHref ? a({ href: askHref, target: "_blank", rel: "noopener", class: `${SECONDARY} py-3.5 text-sm` }, Icon("chat", "size-4"), "Preguntar por este pedido") : null,
   );
-
-  if (pending) watchUploadZone(scroller);
 
   return div(
     { class: "flex h-full flex-col" },
@@ -309,26 +291,7 @@ function OrderDetail(order, site) {
       button({ type: "button", onclick: closeOrders, "aria-label": "Cerrar", class: ICON_BUTTON }, Icon("close", "size-5")),
     ),
     scroller,
-    // Acción principal a la vista mientras falta el anticipo. Se oculta cuando la zona grande de
-    // «Sube tu comprobante» ya está en pantalla, para no mostrar dos botones que hacen lo mismo.
-    pending
-      ? div(
-          { class: () => `border-t border-foreground/10 bg-background p-4 sm:p-5 ${uploadZoneVisible.val ? "hidden" : ""}` },
-          button(
-            {
-              type: "button",
-              onclick: () => {
-                const input = document.getElementById(PROOF_INPUT_ID);
-                if (input && !input.disabled) input.click();
-                else input?.closest("label")?.scrollIntoView({ behavior: "smooth", block: "center" });
-              },
-              class: PRIMARY,
-            },
-            Icon("image", "size-5"),
-            "Subir comprobante",
-          ),
-        )
-      : Footnote(),
+    Footnote(),
   );
 }
 
